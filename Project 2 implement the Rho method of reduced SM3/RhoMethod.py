@@ -48,6 +48,7 @@ def calCollision(A,B,len):
         temp2=f(SP2,len)
         if(temp1==temp2):
             #找到碰撞
+            #print("散列: ",temp1.hex())
             print("散列: ",temp1.hex())
             print("碰撞: ",SP1.hex())
             print("碰撞: ",SP2.hex())
@@ -76,5 +77,4 @@ def RhoMethod(hashLen):
                 break
 
 r=reducedSM3("202100460116".encode('utf8'),2)
-print(r.hex(" "))
 RhoMethod(8)
