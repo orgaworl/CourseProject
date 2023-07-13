@@ -1,4 +1,5 @@
 import gmpy2
+from Crypto.Hash import SHA256
 from Crypto.Util import *
 import math
 p  = 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFE_FFFFFC2F 
@@ -16,17 +17,23 @@ class EllipticCurve:
         self.b=b
         self.n=n
         self.h=h
+        self.G=point(xG,yG)
         self.xG=xG
         self.yG=yG
+        self.G.setCurve(self)
         
 class point:
-    def __init__(self,curve):
+    curve=0
+    x=0
+    y=0
+    def __init__(self,xG=0,yG=0):
+        self.x=xG
+        self.y=yG
+    def setCurve(self,curve):
         self.curve=curve
-        self.x=curve.xG
-        self.y=curve.yG
         
     def __str__(self):
-        return f"({hex(self.x)},\n {hex(self.y)})"
+        return f"({hex(self.x)},\n{hex(self.y)})"
  
     
     def __eq__(self,other):
@@ -39,10 +46,10 @@ class point:
             lam=(3*self.x**2+self.curve.a)*gmpy2.invert(2*self.y,p)  
         else:
             lam=gmpy2.mod(other.y-self.y,p)*gmpy2.invert(other.x-self.x,p)
-        p3=point(self.curve)
-        p3.x=gmpy2.mod(gmpy2.powmod(lam,2,p)-self.x-other.x,p)
-        p3.y=gmpy2.mod(lam*(self.x-p3.x)-self.y,p)
-        p3.curve=self.curve 
+        x=gmpy2.mod(gmpy2.powmod(lam,2,p)-self.x-other.x,p)
+        y=gmpy2.mod(lam*(self.x-x)-self.y,p)
+        p3=point(x,y)
+        p3.setCurve(self.curve)
         return p3
         
     def __mul__(self,k):
@@ -53,18 +60,71 @@ class point:
             k=k>>1
         bitList.reverse()
         bitList.pop(0)
-        G=self
+        basic=self
         p3=self
         for i in range(len(bitList)):
             p3=p3+p3
             if(bitList[i]):
-                p3=p3+G
+                p3=p3+basic
         return p3
 
+
+class ECDSA_SIGN:
+    SK=0
+    PK=0
+    curve=0
+    def __init__(self,curve):
+        self.curve=curve
+        SK=0
+        PK=curve.G
         
+    def keyGen(self):
+        self.SK=number.getPrime(math.floor(math.log(self.curve.n,2)))
+        self.PK=self.curve.G*self.SK
+        return (self.PK)
+        
+    def Sign(self,M):
+        k=number.getPrime(math.floor(math.log(self.curve.n,2)))
+        R=self.curve.G*k
+        r=gmpy2.mod(R.x,self.curve.n)
+        e=SHA256.new(M).hexdigest()
+        e=int(e,16)
+        s=(gmpy2.invert(k,n)*(e+self.SK*r)  )
+        s=gmpy2.mod(s,self.curve.n)
+        return [r,s]
+        
+    
+    def Verify(self,M,Sign,PK):
+        e=SHA256.new(M).hexdigest()
+        e=int(e,16)
+        w=gmpy2.invert(Sign[1],PK.curve.n)
+        
+        temp=PK.curve.G
+        
+        R_=PK.curve.G*(e*w)
+        R_+=PK*(Sign[0]*w)
+        r_=R_.x
+        if(r_==Sign[0]):
+            print("Verify Sucess")
+            return 1
+            
+        return 0
+        
+        
+def testECDSA():
+    curve=EllipticCurve(p,a,b,n,h,xG,yG)
+    obj=ECDSA_SIGN(curve=curve)
+    PK=obj.keyGen()
+    print(f"PK is:\n{PK}\n")
+    M="HELLO".encode()
+    print(f"Message is:\n{M}\n")
+    Sign=obj.Sign(M)
+    print(f"Sign is:\n({Sign[0]},\n{Sign[1]})\n")
+    obj.Verify(M,Sign,PK)
+    
 def forgeSignature(P):
     curve=EllipticCurve(p,a,b,n,h,xG,yG)
-    G=point(curve)
+    G=curve.G
     
     u=number.getPrime(math.floor(math.log(n,2)))
     v=number.getPrime(math.floor(math.log(n,2)))
@@ -75,30 +135,17 @@ def forgeSignature(P):
     print("e:",e)
     print("r:",r)
     print("s:",s)
-    return [e,(r,s)]
+    return (e,(r,s))
     
-    
-    
-# def mul(a,k):
-#     bitList=[]
-#     while(k!=0):
-#         bitList.append(k&0x1)
-#         k=k>>1
-#     bitList.reverse()
-#     bitList.pop(0)
-#     G=a
-#     for i in range(len(bitList)):
-#         a=a+a
-#         if(bitList[i]):
-#             a=a+G
-#     return a
-# print(mul(12,7))
-
-curve=EllipticCurve(p,a,b,n,h,xG,yG)
-G=point(curve)
-P=G*999
-print(P)
-forgeSignature(P)
+def testForge():
+    curve=EllipticCurve(p,a,b,n,h,xG,yG)
+    G=curve.G
+    P=G*123
+    print(f"G is:\n{G}\nP is:\n{P}\n")
+    e,sign=forgeSignature(P)
+    print(f"for e :\n{e}\nSignature is:\n({sign[0]},\n{sign[1]})")
 
 
-
+testECDSA()
+print()
+testForge()
