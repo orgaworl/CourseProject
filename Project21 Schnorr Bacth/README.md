@@ -54,18 +54,38 @@ Schnorr数字签名可同时验证多个签名,提高验证效率.在数据吞�
   \left(\sum_{i=1}^{n} s_{i}\right) * G=\left(\sum_{i=1}^{n} R_{i}\right)+\left(\sum_{i=1}^{n} e_{i} * P_{i}\right) 
   $$
   
-  但这种验证方式存在伪造攻击, 不使用.
+  但这种验证方式存在伪造攻击, 因此不使用.
 
 - 抗伪造Schnorr批量签名验证:    随机 $a_{i} \in[0, \mathrm{p}-1]$, $\mathrm{i} \in[2, n]$ , 验证:
   
   
 
 $$
-\left(s_{1}+\sum_{\{i=2\}}^{\{n\}} a_{i} s_{i}\right) * G=\left(R_{1}+\sum_{\{i=2\}}^{n} a_{i} * R_{i}\right)+\left(e_{1} * P_{1}+\sum_{\{i=2\}}^{n}\left(e_{i} a_{i}\right) * P_{i}\right)
+\left(s_{1}+\sum_{\{i=2\}}^{\{n\}} a_{i} s_{i}\right) * G=\left(R_{1}+\sum_{\{i=2\}}^{n} a_{i} * R_{i}\right)+\left(e_{1} * P_{1}+\sum_{\{i=2\}}^{n}\left(e_{i} a_{i}\right) * P_{i}\right)  \ \ \ (1)
 $$
 
-## 实现
+## 实现及结果
+
+### Schnorr数字签名
+
+本文实现了基于椭圆曲线的基础Schnorr数字签名方案, 选取椭圆曲线同ECDSA为**secp256k1**.
+
+基础实现共包含KeyGen, Sign, Verify 三部分,能代表单个用户对消息进行签名, 同时只能验证单个签名.
+
+<img src=".\\picture\\testSchnorr.png" title="" alt="Schnorr" style="zoom:67%;">
 
 
+
+
+
+### Schnorr数字签名批量验证
+
+在上文基础上, 本文又实现了Schnorr数字签名的批量验证, 能够对多个用户对不同消息进行的签名一起验证, 有效提高了签名验证效率.
+
+
+
+如下是三个用户对不同消息签名的批量验证结果.
+
+<img src=".\\picture\\testBatchVerify.png" title="" alt="batch verify" style="zoom:67%;">
 
 
