@@ -1,7 +1,9 @@
-import gmpy2
 from Crypto.Hash import SHA256
 from Crypto.Util import *
+from sympy import legendre_symbol,sqrt_mod
 import math
+import gmpy2
+
 p  = 0xFFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFF_FFFFFFFE_FFFFFC2F 
 a  = 0x00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000000 
 b  = 0x00000000_00000000_00000000_00000000_00000000_00000000_00000000_00000007 
@@ -10,9 +12,11 @@ h  = 0x1
 xG = 0x79BE667E_F9DCBBAC_55A06295_CE870B07_029BFCDB_2DCE28D9_59F2815B_16F81798 
 yG = 0x483ADA77_26A3C465_5DA4FBFC_0E1108A8_FD17B448_A6855419_9C47D08F_FB10D4B8
 
+
 def mpz_to_bytes(mpz_num):
     return int(mpz_num).to_bytes((mpz_num.bit_length() + 7) // 8, 'big')
 
+        
 class EllipticCurve:
     def __init__(self,p,a,b,n,h,xG,yG):
         self.p=p
@@ -24,6 +28,13 @@ class EllipticCurve:
         self.xG=xG
         self.yG=yG
         self.G.setCurve(self)
+    def subins(self,x):
+        result=gmpy2.powmod(x,3,self.p)
+        result+=gmpy2.mod(self.a*gmpy2.powmod(x,2,self.p),self.p)
+        result=gmpy2.mod(result+self.b,self.p)
+        return sqrt_mod(result,self.p,1)
+        # result= sqrt_mod(result,self.p) #默认正值
+        # return [result,-result]
         
 class point:
     curve=0
@@ -38,12 +49,10 @@ class point:
         
     def __str__(self):
         return f"({hex(self.x)},\n{hex(self.y)})"
- 
     
     def __eq__(self,other):
         return (self.x==other.x) and (self.y==other.y)
     
-
     def __add__(self,other):
         p=self.curve.p
         if(self==other):
@@ -56,6 +65,10 @@ class point:
         p3.setCurve(self.curve)
         return p3
         
+    def __sub__(self,other):
+        other.y=-other.y
+        return self+other
+
     def __mul__(self,k):
         k=gmpy2.mod(k,self.curve.n)
         bitList=[]
@@ -71,8 +84,8 @@ class point:
             if(bitList[i]):
                 p3=p3+basic
         return p3
+    
     def hexVal(self):
-        
         return b'\x04'+mpz_to_bytes(self.x)+mpz_to_bytes(self.y)
     
 
@@ -94,12 +107,15 @@ class ECDSA_SIGN:
     def Sign(self,M):
         k=number.getPrime(math.floor(math.log(self.curve.n,2)))
         R=self.curve.G*k
+        print(f"true R is\n{R}\n")
+        print(f"y^2 =\n{hex(gmpy2.powmod(R.y,2,self.curve.p))}")
         r=gmpy2.mod(R.x,self.curve.n)
         e=SHA256.new(M).hexdigest()
         e=int(e,16)
         s=(gmpy2.invert(k,n)*(e+self.SK*r)  )
         s=gmpy2.mod(s,self.curve.n)
-        return [r,s]
+        app=R.y&0xFF
+        return [r,s,app]
         
     
     def Verify(self,M,Sign,PK):
@@ -121,11 +137,11 @@ def testECDSA():
     
     obj=ECDSA_SIGN(curve=secp256k1)
     PK=obj.keyGen()
-    print(f"PK is:\n{PK}\n")
+    print(f"PK is:\n{PK}")
     M="HELLO".encode()
-    print(f"Message is:\n{M}\n")
+    print(f"Message is:\n{M}")
     Sign=obj.Sign(M)
-    print(f"Sign is:\n({Sign[0]},\n{Sign[1]})\n")
+    print(f"Sign is:\n({hex(Sign[0])},\n{hex(Sign[1])})")
     obj.Verify(M,Sign,PK)
     
 def forgeSignature(P):
@@ -146,11 +162,11 @@ def forgeSignature(P):
 def testForge():
     G=secp256k1.G
     P=G*123
-    print(f"G is:\n{G}\nP is:\n{P}\n")
+    print(f"G is:\n{G}\nP is:\n{P}")
     e,sign=forgeSignature(P)
     print(f"for e :\n{e}\nSignature is:\n({sign[0]},\n{sign[1]})")
 
 
-# testECDSA()
-# print()
-# testForge()
+#testECDSA()
+#print("\n***********\n")
+#testForge()

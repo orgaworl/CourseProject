@@ -12,13 +12,13 @@ $ \operatorname{Sign}(m) $
 
 - $ k \leftarrow Z_{n}^{* }, R=k G $
 - $ r=R_{x} \bmod n, r \neq 0 $
-- $ e=\operatorname{hash}(m) $
+- $ e=\operatorname{hash}(m)\ mod\ n $
 - $ s=k^{-1}(e+d r) \bmod n $
 - Signature is  (r, s) 
 
 Verify  (r, s) of  m  with  P 
 
-- $ e=\operatorname{hash}(m) $
+- $ e=\operatorname{hash}(m)\mod\ n $
 
 - $ w=s^{-1} \bmod n $
 
@@ -83,8 +83,6 @@ $y^2=x^3+ax^2+b\ over \ F_p$
 
 <img src=".\\picture\\testECDSA.png" title="" alt="验证" style="zoom:67%;">
 
-
-
 随后,本文实现了ECDSA的身份伪造攻击, 可在已知公钥G和P情况下伪造e=Hash(m)的签名$\sigma^{'}=(r^{'},s^{'})$.
 
 <img src=".\\picture\\testForge.png" title="" alt="forge" style="zoom:67%;">
@@ -92,3 +90,11 @@ $y^2=x^3+ax^2+b\ over \ F_p$
 最后, 我们只需获取中本聪的公钥即可伪造其身份.
 
 查看区块链上最早的区块,能找到由satoshi发布的
+
+
+
+
+
+(1,-1)=(1,9) mod 10
+
+(9.-9)=(9,1) mod 10
