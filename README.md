@@ -15,7 +15,7 @@ Some little projects of courses.
 | project 07 |                                                                                                     |     |     |
 | project 08 |                                                                                                     |     |     |
 | project 09 | ???                                                                                                 |     |     |
-| project 10 |                                                                                                     |     |     |
+| project 10 |                                                                                                     |     |  ✅   |
 | project 11 |                                                                                                     |     |    ✅ |
 | project 12 |                                                                                                     |     |     |
 | project 13 |                                                                                                     |     |    ✅ |
