@@ -4,6 +4,11 @@ import base64
 import binascii
 import random
 import math
+import time
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, hmac
+import hashlib
+
 
 SM2_A = 0xFFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFC
 SM2_B = 0x28E9FA9E9D9F5E344D5A9E4BCF6509A7F39789F515AB8F92DDBCBD414D940E93
@@ -23,6 +28,47 @@ curve_sm2 = ellipticcurve.CurveFp(p, a, b)
 
 # 定义生成器点G
 G = ellipticcurve.Point(curve_sm2, Gx, Gy, n)
+
+
+def generate_rfc6979_k(private_key, message):
+    # 计算消息的哈希值
+    hashed_message = hashlib.sha256(message.encode()).digest()
+
+    # 将私钥转换为原始字节串（32字节）
+    private_key_bytes = private_key.to_bytes(32, byteorder='big')
+
+    # 创建HMAC上下文
+    hmac_context = hmac.HMAC(private_key_bytes, hashes.SHA256(), backend=default_backend())
+
+    # 初始化种子为全零字节串
+    seed = b'\x00' * 32
+
+    # 初始化计数器
+    counter = 1
+
+    while True:
+        # 更新HMAC上下文的密钥为当前种子
+        hmac_context.update(seed)
+
+        # 计算HMAC值并转换为大整数
+        hmac_value = hmac_context.finalize()
+
+        # 将HMAC值取模，以确保在有限域中
+        k = int.from_bytes(hmac_value, byteorder='big') % private_key
+
+        # 检查k是否大于0
+        if k > 0:
+            break
+
+        # 增加计数器的值
+        counter += 1
+
+        # 将计数器的值转换为字节串作为下一个种子
+        seed = counter.to_bytes(32, byteorder='big')
+
+    return k
+
+
 
 
 def SM2_Key_Generate():
@@ -52,7 +98,7 @@ def extended_gcd(a1, b0):
 # print(G)
 
 
-def sm2_sig(message, sk):
+def sm2_sig(message, sk,k):
     message = message.encode()
     message = list(message)
     # print(message)
@@ -60,7 +106,6 @@ def sm2_sig(message, sk):
     e = int(e, 16)
     print('消息散列值为', e)
 
-    k = random.randint(1, SM2_N - 1)
     c = k * G
     r = pow(e + c.x(), 1, SM2_N)
     mid = mod_inverse((1 + sk), SM2_N)
@@ -94,16 +139,32 @@ def sm2_ver(message, r, s, pk):
         return 0
 
 
-message = 'sm2'
 
+message = 'sm2'
+t0 = time.time()
 sk, pk = SM2_Key_Generate()
-sig = sm2_sig(message, sk)
+t00 = time.time()
+k = generate_rfc6979_k(sk,message)
+t1 = time.time()
+
+
+
+sig = sm2_sig(message, sk,k)
+t2 = time.time()
+out = sm2_ver(message, sig[0], sig[1], pk)
+t3 = time.time()
 print('r=', sig[0])
 #print('r=', str(hex(sig[0])))
 
 print('s=', sig[1])
-out = sm2_ver(message, sig[0], sig[1], pk)
+
 print('验证结果为', out)
+print('第1步执行时间:',t00-t0)
+print('k生成执行时间:',t1-t00)
+print('第2步执行时间:',t2-t1)
+print('第3步执行时间:',t3-t2)
+
+
 # sm2 签名验证
 
 #
