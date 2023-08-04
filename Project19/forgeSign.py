@@ -108,4 +108,4 @@ def benchmark_forge(testTimes=7,loopTimes=50):
     
 testECDSA("202100460116")
 testForge(secp256k1.G*13)
-benchmark_forge()
+benchmark_forge(30)
