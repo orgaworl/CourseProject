@@ -4,6 +4,7 @@
 #include"iostream"
 #include <iomanip>
 #include<ctime>
+#include<cstring>
 typedef unsigned char uint8;
 typedef unsigned short int uint16;
 typedef unsigned int uint32;

@@ -1,4 +1,4 @@
-#pragma once
+
 #include"LengthExtendAttack.h"
 
 void test_LengthExtendAttack()
@@ -72,7 +72,7 @@ void test_LengthExtendAttack()
 	
 
 	double T = ((double)eT - sT) / CLOCKS_PER_SEC;
-	printf("\n\n\nºÄÊ±: %d clock", (eT - sT));
+	printf("\n\n\nºÄÊ±: %ld clock", (eT - sT));
 	printf("\nºÄÊ±: %5f S", T);
 	printf("\n");
 }

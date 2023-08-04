@@ -339,8 +339,8 @@ uint32* compress(uint32 mes[16],uint32 linkVar[8])
 	{
 		result[i] = linkVar[i] ^ poiDes[i];
 	}
-	delete [8]poiSrc;
-	delete [8]poiDes;
+	delete []poiSrc;
+	delete []poiDes;
 	delete wordList;
 	return result;
 
